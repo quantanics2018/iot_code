@@ -4,7 +4,7 @@
 #include <ArduinoJson.h>
 
 const int moistureSensorPin = A0;
-#define RELAY_PIN 14
+#define RELAY_PIN 14;
 const int trigPin = 14;
 const int echoPin = 12;
 int FloatSensor = 2;
@@ -78,7 +78,9 @@ void loop() {
     Serial.print("Distance: ");
     Serial.print(distance);
     Serial.println(" cm");
- 
+    Serial.print("LDR:");
+    Serial.print(ldr);
+
     buttonState = digitalRead(FloatSensor);
     if (buttonState == LOW) {
         digitalWrite(ledPin2, HIGH);
@@ -95,8 +97,7 @@ void loop() {
     // Create a JSON object
     StaticJsonDocument<200> jsonDoc;
     jsonDoc["distance"] = distance;
-    jsonDoc["buttonState"] = buttonState;
-
+    jsonDoc["moistureLevel"] = moistureLevel;
 
     // Serialize JSON object to a string
     String data;
