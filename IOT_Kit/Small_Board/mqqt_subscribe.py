@@ -9,7 +9,7 @@ class Mqtt:
             host="localhost",
             user="root",
             password="",
-            database="iot_db"
+            database="adhiban"
         )
         self.mqttclient = mqttClient.Client("2cfc106f-ac45-4dcf-9d6a-bd49ff4a615b")
         self.mqttclient.on_connect = self.on_connect
