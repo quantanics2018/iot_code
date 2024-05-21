@@ -1,5 +1,6 @@
 import mysql.connector
 import paho.mqtt.client as mqttClient
+import json
 from concurrent.futures import ThreadPoolExecutor
 
 class Mqtt:
@@ -7,7 +8,7 @@ class Mqtt:
         self.db = mysql.connector.connect(
             host="localhost",
             user="root",
-            password="quantanics123",
+            password="",
             database="iot_db"
         )
         self.mqttclient = mqttClient.Client("2cfc106f-ac23-4dcf-9d6a-bd49ff4a615b")
@@ -22,35 +23,22 @@ class Mqtt:
     def upload(self, msg):
         try:
             mqtt_msg = msg.payload.decode("utf-8")
-            sensor_Arr = mqtt_msg.split(",")
-            
-            print("Received message:", type(mqtt_msg))
-            print(sensor_Arr)
-            ldr_val = 0
-            if(len(sensor_Arr)==6):
-                ldr_val= 0
-                soli_val = 0
-                rain_val = 0
-                flow_rate_val = 0
-            elif(len(sensor_Arr)>6):
-                ldr_val_tmp = sensor_Arr[5].split(":")
-                soil_tmp_val = sensor_Arr[6].split(":")
-                rain_tmp_val = sensor_Arr[7].split(":")
-                flow_rate_tmp_val = sensor_Arr[8].split(":")
+            sensor_data = json.loads(mqtt_msg)
 
-                ldr_val = ldr_val_tmp[1]
-                soli_val = soil_tmp_val[1]
-                rain_val = rain_tmp_val[1]
-                flow_rate_val = flow_rate_tmp_val[1].replace('\r')
-            
+            temperature = sensor_data.get("temperature", 0)
+            humidity = sensor_data.get("humidity", 0)
+            distance1 = sensor_data.get("distance1", 0)
+            distance2 = sensor_data.get("distance2", 0)
+            smoke_value = sensor_data.get("smokeValue", 0)
+            ldr_value = sensor_data.get("LDRSensorValue", 0)
+            soil_value = sensor_data.get("soilValue", 0)
+            rain_value = sensor_data.get("rainValue", 0)
 
-            
-
-            # temperature , humdity , distance1,distance2,smokevalue,ldr,soil_moisture,raindrop,flowrate
+            # temperature, humidity, distance1, distance2, smoke_value, ldr_value, soil_value, rain_value
             mycursor = self.db.cursor()
-            sql="INSERT INTO `large_kit`(`temperature`, `humidity`, `distance1`, `distance2`, `smoke_val`, `ldr_val`, `soil_moisture`, `raindrop`, `flowrate`) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)"
-            value_sensor = (sensor_Arr[0],sensor_Arr[1],sensor_Arr[2],sensor_Arr[3],sensor_Arr[4],ldr_val,soli_val,rain_val,flow_rate_val)
-            mycursor.execute(sql,value_sensor)
+            sql = "INSERT INTO `large_kit`(`temperature`, `humidity`, `distance1`, `distance2`, `smoke_val`, `ldr_val`, `soil_moisture`, `raindrop`) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)"
+            value_sensor = (temperature, humidity, distance1, distance2, smoke_value, ldr_value, soil_value, rain_value)
+            mycursor.execute(sql, value_sensor)
             self.db.commit()
 
             print("Data Inserted!")
@@ -65,7 +53,6 @@ class Mqtt:
 
     def on_message(self, mqttclient, userdata, msg):
         self.executor.submit(self.upload, msg)
-        # humdity , temperature , distance1,distance2,smoke,irvalue
 
 if __name__ == "__main__":
     Mqtt()
