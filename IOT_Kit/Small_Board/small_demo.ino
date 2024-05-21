@@ -2,23 +2,26 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include <Wire.h>
+#include <ArduinoJson.h> // Include ArduinoJson library
+
 #define TRIG_PIN1 D0  // GPIO0 pin connected to the first ultrasonic sensor's trig pin
 #define ECHO_PIN1 D7  // GPIO13 pin connected to the first ultrasonic sensor's echo pin
-
 #define TRIG_PIN2 D5  // GPIO14 pin connected to the second ultrasonic sensor's trig pin
 #define ECHO_PIN2 D6  // GPIO12 pin connected to the second ultrasonic sensor's echo pin
 #define SMOKE_SENSOR_PIN A0  // GPIO4 (A0) pin connected to the smoke sensor
 #define LDR_SENSOR_PIN D8  // GPIO4 (A0) pin connected to the LDR sensor
-#include "DHT.h"
+
 #define DHTPIN D5     // Digital pin connected to the DHT sensor
-#define DHTTYPE DHT11   // DH
+#define DHTTYPE DHT11   // DHT sensor type (DHT11 or DHT22)
 DHT dht(DHTPIN, DHTTYPE);
+
 const char* ssid = "Airel_9842878776"; // Your WiFi SSID
 const char* password = "air88581"; // Your WiFi password
 const char* mqttServer = "broker.emqx.io";
 const int mqttPort = 1883;
 const char* mqttClientID = "259a800e-1ac5-4109-aa6e-3714cbeefa14";
 const char* mqttTopic = "Sensor";
+
 WiFiClient wifiClient;
 PubSubClient client(wifiClient);
 
@@ -54,6 +57,7 @@ void reconnect() {
     }
   }
 }
+
 void setup() {
   Serial.begin(9600);
   pinMode(TRIG_PIN1, OUTPUT);
@@ -87,9 +91,9 @@ void loop() {
   delay(500);
   
   int smokeValue = analogRead(SMOKE_SENSOR_PIN);
-   if (smokeValue < 20) {
+  if (smokeValue < 20) {
     smokeValue = 0;
-   }
+  }
   int ldrValue = digitalRead(LDR_SENSOR_PIN);
   float h = dht.readHumidity();
   float t = dht.readTemperature();
@@ -119,11 +123,27 @@ void loop() {
   Serial.println("");
 
   delay(2000);
-   if (!client.connected()) {
+  
+  if (!client.connected()) {
     reconnect();  // Adjust the delay as needed
   }
 
-  String data = String(h) + ","+ String(t) + "," + String(distance1) + "," + String(distance2)+ "," + String(smokeValue)+ "," + String(ldrValue);
+  // Create a JSON object
+  StaticJsonDocument<200> jsonDoc;
+
+  // Add data to the JSON object
+  jsonDoc["humidity"] = h;
+  jsonDoc["temperature"] = t;
+  jsonDoc["distance1"] = distance1;
+  jsonDoc["distance2"] = distance2;
+  jsonDoc["smokeValue"] = smokeValue;
+  jsonDoc["ldrValue"] = ldrValue;
+
+  // Serialize JSON object to a string
+  String data;
+  serializeJson(jsonDoc, data);
+
+  // Publish JSON data to MQTT topic
   client.publish(mqttTopic, data.c_str());
 
   Serial.println("Published to MQTT: " + data);
