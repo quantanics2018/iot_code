@@ -76,23 +76,12 @@ void loop() {
     delay(15);
   }
 
-  Serial.print("LDR:");
-  Serial.print(LDRSensorValue);
-  Serial.print(",");
-  Serial.print("SOIL:");
-  Serial.print(soilValue);
-  Serial.print(",");
-  Serial.print("RAIN:");
-  Serial.print(rainValue);
-  Serial.print(",");
-  Serial.print("FLOWRATE:");
-  Serial.println(flow_rate, 2);
-  Serial.println("Liter/hour");
 
   str = String(LDRSensorValue) + ","  + String(soilValue) + "," + String(rainValue) + ","  + String(flow_rate);
+  Serial.println(str);
   espSerial.println(str);
 
-  delay(2000);
+  delay(1000);
 }
 
 void interrupt_handler() {

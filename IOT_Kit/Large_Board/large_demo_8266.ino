@@ -20,7 +20,7 @@ const char* password = "air88581"; // Your WiFi password
 const char* mqttServer = "broker.emqx.io";
 const int mqttPort = 1883;
 const char* mqttClientID = "259a800e-1ac5-4109-aa6e-3714cbeefa14";
-const char* mqttTopic = "Sensor12";
+const char* mqttTopic = "/quantanics/industry/sensor";
 
 WiFiClient wifiClient;
 PubSubClient client(wifiClient);
@@ -142,7 +142,7 @@ void loop() {
 
   Serial.println("Published to MQTT: " + data);
 
-  delay(2000);
+  delay(1000);
 
   if (Serial.available()) {
     Serial.write(Serial.read());
