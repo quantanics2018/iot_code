@@ -66,7 +66,7 @@ void publishGasSensorData(int gas_sensor_data) {
   // Publish the JSON string to the "gas_sensor_data" topic
   Serial.println("Publishing gas sensor data");
   Serial.println(jsonString.c_str());
-  client.publish("quantanics/gas_sensor_data", jsonString.c_str());
+  client.publish("quantanics/industry/gas_sensor_data", jsonString.c_str());
 }
 
 void loop() {
