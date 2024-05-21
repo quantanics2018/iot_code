@@ -20,7 +20,7 @@ const char* password = "air88581"; // Your WiFi password
 const char* mqttServer = "broker.emqx.io";
 const int mqttPort = 1883;
 const char* mqttClientID = "259a800e-1ac5-4109-aa6e-3714cbeefa14";
-const char* mqttTopic = "Sensor";
+const char* mqttTopic = "/quantanics/industry/Small_Board";
 
 WiFiClient wifiClient;
 PubSubClient client(wifiClient);
