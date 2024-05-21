@@ -3,12 +3,10 @@
 #include <Wire.h>
 #include <ArduinoJson.h>
 
-const int moistureSensorPin = A0;
 #define RELAY_PIN 14;
 const int trigPin = 14;
 const int echoPin = 12;
-int FloatSensor = 2;
-const int ledPin2 = 13;
+const int moistureSensorPin = A0;
 
 const char* ssid = "Airel_9842878776";
 const char* password = "air88581";
@@ -29,7 +27,6 @@ void setup() {
 
     pinMode(trigPin, OUTPUT);
     pinMode(echoPin, INPUT);
-    pinMode(ledPin2, OUTPUT);
 
     while (WiFi.status() != WL_CONNECTED) {
         delay(1000);
@@ -81,14 +78,7 @@ void loop() {
     Serial.print("LDR:");
     Serial.print(ldr);
 
-    buttonState = digitalRead(FloatSensor);
-    if (buttonState == LOW) {
-        digitalWrite(ledPin2, HIGH);
-        Serial.println("WATER LEVEL - HIGH");
-    } else {
-        digitalWrite(ledPin2, HIGH);
-        Serial.println("WATER LEVEL - LOW");
-    }
+    ;
 
     if (!client.connected()) {
         reconnect();
