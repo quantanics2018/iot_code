@@ -1,50 +1,35 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include <Wire.h>
+#include <ArduinoJson.h>
 
-// Define the pin connected to the soil moisture sensor
-const int moistureSensorPin = A0; // Change this to the actual pin you're using
-
-// Define the pin connected to the relay
-//const int relayPin = 14; // Change this to the actual pin you're using
+const int moistureSensorPin = A0;
 #define RELAY_PIN 14
-
-// Define the threshold for activating the relay
-const int moistureThreshold = 700; // Change this threshold value as needed
-
-const int ldrpin=16;
-const int trigPin = 14;// Trig pin of the ultrasonic sensor
-const int echoPin = 12;   // Echo pin of the ultrasonic sensor
-int FloatSensor=2;   
-const int ledPin2 = 13;  // Change this to the actual pin you're using         
-int buttonState = 1; //reads pushbutton status 
-
-
+const int trigPin = 14;
+const int echoPin = 12;
+int FloatSensor = 2;
+const int ledPin2 = 13;
 
 const char* ssid = "Airel_9842878776";
 const char* password = "air88581";
-const char* mqttServer = "broker.emqx.io"; // MQTT broker address
-const int mqttPort = 1883; // MQTT broker port
-const char* mqttUser = ""; // MQTT username (if required)
-const char* mqttPassword = ""; // MQTT password (if required)
+const char* mqttServer = "broker.emqx.io";
+const int mqttPort = 1883;
+const char* mqttUser = "";
+const char* mqttPassword = "";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 
 void setup() {
-
     pinMode(RELAY_PIN, OUTPUT);
     digitalWrite(RELAY_PIN, LOW);
-  
+
     Serial.begin(115200);
     WiFi.begin(ssid, password);
-    
-    pinMode(trigPin, OUTPUT); // Set the trigPin as an OUTPUT
-    pinMode(echoPin, INPUT);  // Set the echoPin as an INPUT
-   
+
+    pinMode(trigPin, OUTPUT);
+    pinMode(echoPin, INPUT);
     pinMode(ledPin2, OUTPUT);
-    pinMode(FloatSensor, INPUT_PULLUP); //Arduino Internal Resistor 10K
-   
 
     while (WiFi.status() != WL_CONNECTED) {
         delay(1000);
@@ -70,27 +55,15 @@ void reconnect() {
 }
 
 void loop() {
-
-    // Turn on the relay for 2 seconds
     digitalWrite(RELAY_PIN, HIGH);
-    delay(2000); // Wait for 2 seconds
-  
-    // Turn off the relay for 2 seconds
+    delay(2000);
     digitalWrite(RELAY_PIN, LOW);
-    delay(2000); // Wait for 2 seconds
-   
+    delay(2000);
+
     int ldr = digitalRead(ldrpin);
     int moistureLevel = analogRead(moistureSensorPin);
     Serial.print("Moisture level: ");
     Serial.println(moistureLevel);
-
-//    if (moistureLevel < moistureThreshold) {
-//        //digitalWrite(relayPin, HIGH);
-//        Serial.println("Relay turned ON");
-//    } else {
-//        //digitalWrite(relayPin, LOW);
-//        Serial.println("Relay turned OFF");
-//    }
 
     long duration;
     int distance;
@@ -105,29 +78,31 @@ void loop() {
     Serial.print("Distance: ");
     Serial.print(distance);
     Serial.println(" cm");
-    Serial.print("LDR:");
-    Serial.print(ldr);
-
-    
-
-    buttonState = digitalRead(FloatSensor); 
-   if (buttonState == LOW) 
-   { 
-    digitalWrite(ledPin2, HIGH);
-    Serial.println( "WATER LEVEL - HIGH"); 
-   } 
-   else 
-   { 
-    digitalWrite(ledPin2, HIGH);
-    Serial.println( "WATER LEVEL - LOW" ); 
-   } 
+ 
+    buttonState = digitalRead(FloatSensor);
+    if (buttonState == LOW) {
+        digitalWrite(ledPin2, HIGH);
+        Serial.println("WATER LEVEL - HIGH");
+    } else {
+        digitalWrite(ledPin2, HIGH);
+        Serial.println("WATER LEVEL - LOW");
+    }
 
     if (!client.connected()) {
         reconnect();
     }
 
-    String data = String(distance) + "," + String(buttonState) + "," + String(moistureLevel)+ "," + String(ldr);
-    String topic = "Sensors13";
+    // Create a JSON object
+    StaticJsonDocument<200> jsonDoc;
+    jsonDoc["distance"] = distance;
+    jsonDoc["buttonState"] = buttonState;
+
+
+    // Serialize JSON object to a string
+    String data;
+    serializeJson(jsonDoc, data);
+
+    String topic = "/quantanics/industry/Medium_Board";
     client.publish(topic.c_str(), data.c_str());
     Serial.println("Published to MQTT: " + data);
     delay(1000);

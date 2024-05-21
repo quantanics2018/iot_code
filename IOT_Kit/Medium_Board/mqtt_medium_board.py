@@ -7,7 +7,7 @@ class Mqtt:
         self.db = mysql.connector.connect(
             host="localhost",
             user="root",
-            password="quantanics123",
+            password="",
             database="iot_db"
         )
         self.mqttclient = mqttClient.Client("2cfc106f-ac77-4dcf-9d6a-bd49ff4a615b")
@@ -15,7 +15,7 @@ class Mqtt:
         self.mqttclient.on_message = self.on_message
         self.mqttclient.username_pw_set(username="", password="")
         mqttstatus = self.mqttclient.connect("broker.emqx.io", 1883, 60)
-        self.mqttclient.subscribe("Medium_Board", 0)  # Change the topic here
+        self.mqttclient.subscribe("/quantanics/industry/Medium_Board", 0)  # Change the topic here
         self.executor = ThreadPoolExecutor(max_workers=10)  # Adjust the number of workers as needed
         self.mqttclient.loop_forever()
 
