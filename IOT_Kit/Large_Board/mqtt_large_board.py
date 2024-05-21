@@ -15,7 +15,7 @@ class Mqtt:
         self.mqttclient.on_message = self.on_message
         self.mqttclient.username_pw_set(username="", password="")
         mqttstatus = self.mqttclient.connect("broker.emqx.io", 1883, 60)
-        self.mqttclient.subscribe("Sensor12", 0)  # Change the topic here
+        self.mqttclient.subscribe("Large_Board", 0)  # Change the topic here
         self.executor = ThreadPoolExecutor(max_workers=10)  # Adjust the number of workers as needed
         self.mqttclient.loop_forever()
 
