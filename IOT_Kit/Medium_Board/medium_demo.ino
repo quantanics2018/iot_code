@@ -3,7 +3,7 @@
 #include <Wire.h>
 #include <ArduinoJson.h>
 
-#define RELAY_PIN 14;
+const int RELAY_PIN = 14;
 const int trigPin = 14;
 const int echoPin = 12;
 const int moistureSensorPin = A0;
@@ -57,7 +57,6 @@ void loop() {
     digitalWrite(RELAY_PIN, LOW);
     delay(2000);
 
-    int ldr = digitalRead(ldrpin);
     int moistureLevel = analogRead(moistureSensorPin);
     Serial.print("Moisture level: ");
     Serial.println(moistureLevel);
@@ -75,10 +74,6 @@ void loop() {
     Serial.print("Distance: ");
     Serial.print(distance);
     Serial.println(" cm");
-    Serial.print("LDR:");
-    Serial.print(ldr);
-
-    ;
 
     if (!client.connected()) {
         reconnect();
