@@ -1,6 +1,7 @@
 #include <Wire.h>
 #include <SoftwareSerial.h>
 #include <Servo.h>
+#include <ArduinoJson.h> // Make sure to include the ArduinoJson library
 
 // Water Flow Sensor
 #define FlowSensor_INPUT 2 // Arduino interrupt pin connected to flow sensor
@@ -16,8 +17,6 @@ unsigned long old_time;
 const int relayPin = 9;
 SoftwareSerial espSerial(0, 1);
 Servo servo;
-
-String str;
 
 String obstacleState = "no obstacle";
 
@@ -35,7 +34,7 @@ void setup() {
   old_time = millis();
 
   // Servo motor
-  servo.attach(10); // Connect the servo signal wire to pin 3
+  servo.attach(10); // Connect the servo signal wire to pin 10
 }
 
 void loop() {
@@ -76,23 +75,20 @@ void loop() {
     delay(15);
   }
 
-  Serial.print("LDR:");
-  Serial.print(LDRSensorValue);
-  Serial.print(",");
-  Serial.print("SOIL:");
-  Serial.print(soilValue);
-  Serial.print(",");
-  Serial.print("RAIN:");
-  Serial.print(rainValue);
-  Serial.print(",");
-  Serial.print("FLOWRATE:");
-  Serial.println(flow_rate, 2);
-  Serial.println("Liter/hour");
+  // Create JSON object
+  StaticJsonDocument<200> jsonDoc;
+  jsonDoc["LDRSensorValue"] = LDRSensorValue;
+  jsonDoc["soilValue"] = soilValue;
+  jsonDoc["rainValue"] = rainValue;
+  jsonDoc["flow_rate"] = flow_rate;
 
-  str = String(LDRSensorValue) + ","  + String(soilValue) + "," + String(rainValue) + ","  + String(flow_rate);
-  espSerial.println(str);
+  String jsonString;
+  serializeJson(jsonDoc, jsonString);
 
-  delay(2000);
+  Serial.println(jsonString);
+  espSerial.println(jsonString);
+
+  delay(1000);
 }
 
 void interrupt_handler() {

@@ -2,12 +2,13 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include <Wire.h>
+#include <ArduinoJson.h> // Include the ArduinoJson library
 
 #define TRIG_PIN1 D0  // GPIO0 pin connected to the first ultrasonic sensor's trig pin
 #define ECHO_PIN1 D7  // GPIO13 pin connected to the first ultrasonic sensor's echo pin
 
 #define TRIG_PIN2 D1  // GPIO14 pin connected to the second ultrasonic sensor's trig pin
-#define ECHO_PIN2 D2 // GPIO12 pin connected to the second ultrasonic sensor's echo pin
+#define ECHO_PIN2 D2  // GPIO12 pin connected to the second ultrasonic sensor's echo pin
 #define SMOKE_SENSOR_PIN A0  // GPIO4 (A0) pin connected to the smoke sensor
 
 #define DHTPIN 14    // Digital pin connected to the DHT sensor
@@ -20,7 +21,7 @@ const char* password = "air88581"; // Your WiFi password
 const char* mqttServer = "broker.emqx.io";
 const int mqttPort = 1883;
 const char* mqttClientID = "259a800e-1ac5-4109-aa6e-3714cbeefa14";
-const char* mqttTopic = "Sensor12";
+const char* mqttTopic = "/quantanics/industry/Large_Board";
 
 WiFiClient wifiClient;
 PubSubClient client(wifiClient);
@@ -137,12 +138,37 @@ void loop() {
     reconnect();
   }
 
-  String data = String(t) + "," + String(h) + "," + String(distance1) + "," + String(distance2) + "," + String(smokeValue) +"," + String(receivedData);
-  client.publish(mqttTopic, data.c_str());
+  // Create JSON object for sensor data
+  StaticJsonDocument<256> sensorData;
+  sensorData["temperature"] = t;
+  sensorData["humidity"] = h;
+  sensorData["distance1"] = distance1;
+  sensorData["distance2"] = distance2;
+  sensorData["smokeValue"] = smokeValue;
 
-  Serial.println("Published to MQTT: " + data);
+  // Parse the received JSON string
+  StaticJsonDocument<256> receivedJson;
+  DeserializationError error = deserializeJson(receivedJson, receivedData);
 
-  delay(2000);
+  if (error) {
+    Serial.print(F("deserializeJson() failed: "));
+    Serial.println(error.f_str());
+    return;
+  }
+
+  // Merge received JSON with sensor data
+  for (JsonPair kv : receivedJson.as<JsonObject>()) {
+    sensorData[kv.key()] = kv.value();
+  }
+
+  String jsonString;
+  serializeJson(sensorData, jsonString);
+
+  client.publish(mqttTopic, jsonString.c_str());
+
+  Serial.println("Published to MQTT: " + jsonString);
+
+  delay(1000);
 
   if (Serial.available()) {
     Serial.write(Serial.read());
