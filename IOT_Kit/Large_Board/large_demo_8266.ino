@@ -61,6 +61,7 @@ void reconnect() {
 }
 
 void setup() {
+  Serial.begin(115200);
   pinMode(TRIG_PIN1, OUTPUT);
   pinMode(ECHO_PIN1, INPUT);
   pinMode(TRIG_PIN2, OUTPUT);
@@ -72,7 +73,6 @@ void setup() {
   setupWiFi();
   client.setServer(mqttServer, mqttPort);
 
-  Serial.begin(115200);
   while (!Serial) {
     ; // wait for serial port to connect
   }
@@ -150,17 +150,16 @@ void loop() {
   StaticJsonDocument<256> receivedJson;
   DeserializationError error = deserializeJson(receivedJson, receivedData);
 
-  if (error) {
+  if (!error) {
+    // Merge received JSON with sensor data
+    for (JsonPair kv : receivedJson.as<JsonObject>()) {
+      sensorData[kv.key()] = kv.value();
+    }
+  } else {
     Serial.print(F("deserializeJson() failed: "));
     Serial.println(error.f_str());
-    return;
-  }
-
-  // Merge received JSON with sensor data
-  for (JsonPair kv : receivedJson.as<JsonObject>()) {
-    sensorData[kv.key()] = kv.value();
-  }
-
+  } 
+    
   String jsonString;
   serializeJson(sensorData, jsonString);
 
