@@ -1,5 +1,5 @@
 #include <Wire.h>
-#define RELAY_PIN 9 // Change D1 to the GPIO pin connected to your relay
+#define RELAY_PIN 23 // Change D1 to the GPIO pin connected to your relay
 
 void setup() {
   pinMode(RELAY_PIN, OUTPUT);

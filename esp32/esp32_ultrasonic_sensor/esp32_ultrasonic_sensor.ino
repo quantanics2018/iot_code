@@ -13,8 +13,8 @@
 
 
 //wifi username password
-const char* ssid = "Airel_9842878776";
-const char* password = "air88581";
+const char* ssid = "Quantanics";
+const char* password = "Qu@nt@nics18";
 //mqtt username password and server credentials
 const char* mqttServer = "broker.emqx.io"; 
 const int mqttPort = 1883; 
