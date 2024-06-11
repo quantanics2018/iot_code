@@ -5,16 +5,18 @@
 #include <ArduinoJson.h> // Include ArduinoJson library
 
 
-//constant value declaring
 
+
+// Define the pin where the sensor is connected
+const int soilMoisturePin = 36; // Analog pin (GPIO34)
 //Ultrasonic sensro pins declaration
 #define TRIGGER_PIN 16
 #define ECHO_PIN 17
 
 
 //wifi username password
-const char* ssid = "Quantanics";
-const char* password = "Qu@nt@nics18";
+const char* ssid = "Airel_9842878776";
+const char* password = "air88581";
 //mqtt username password and server credentials
 const char* mqttServer = "broker.emqx.io"; 
 const int mqttPort = 1883; 
@@ -32,17 +34,24 @@ PubSubClient client(espClient);
 
 
 
+
 void setup() {
-  Serial.begin(9600);
+   Serial.begin(9600);
 
   // wifi username and password initializing  
   WiFi.begin(ssid, password);
 
-  // Read Input / Output pins  
+
+  // Initialize the analog pin
+  pinMode(soilMoisturePin, INPUT);
+
+
+//  declare ultrasnoic sensor pin
+// Read Input / Output pins  
   pinMode(TRIGGER_PIN, OUTPUT);
   pinMode(ECHO_PIN, INPUT);
 
-  // wifi connection status checking 
+   // wifi connection status checking 
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
   }
@@ -53,16 +62,17 @@ void setup() {
  
 }
 
+
+
 //its reconnect function
 void reconnect() {
     while (!client.connected()) {
-//        Serial.println("Attempting MQTT connection...");
+
         if (client.connect(clientId, mqttUser, mqttPassword)) {
             Serial.println("Connected to MQTT broker");
         }
         else {
-//            Serial.print("Failed, rc=");
-//            Serial.print(client.state());
+
             Serial.println(" Retrying in 5 seconds...");
             delay(5000);
         }
@@ -70,12 +80,13 @@ void reconnect() {
 }
 
 
-void publishData(float distance){
+void publishData(int soil_data,long distance){
   // Create a JSON object
   StaticJsonDocument<100> doc;
 
   
   // Add data to the JSON object
+  doc["soil_moisture"] = soil_data;
   doc["distance"] = distance;
   
 
@@ -85,18 +96,18 @@ void publishData(float distance){
   serializeJson(doc, jsonString);
 
   
-  // Publish the JSON string to the "data" topic
-//  Serial.println("publishing data");
-//  Serial.println(jsonString.c_str());
-  client.publish("/quantanics/industry/ultrasonic1", jsonString.c_str());
+  
+  client.publish("quantanics/industry/testing1", jsonString.c_str());
 }
 
 
 void loop() {
-  unsigned long currentMillis = millis();
+
+   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
-    long duration, distance;
+
+     long duration, distance;
     
     digitalWrite(TRIGGER_PIN, LOW); 
     delayMicroseconds(2); 
@@ -107,18 +118,22 @@ void loop() {
     duration = pulseIn(ECHO_PIN, HIGH);
   
     distance = duration * 0.034 / 2;
+    
+    // Read the analog value from the sensor
+    int soilMoistureValue = analogRead(soilMoisturePin);
+
+    
+    publishData(soilMoistureValue,distance);
+    
+    // Print the sensor value to the Serial Monitor
+    Serial.print("Soil Moisture Value: ");
+    Serial.println(soilMoistureValue);
+    Serial.print("Distance");
     Serial.println(distance);
-    if (distance >= 0 && distance <= 400) {
-      
-       // Read humidity and temperature
-     Serial.println(distance);
-      publishData(distance);
-          
-      
-    } else {
-      Serial.println("Out of range");
-    }
+  
+    // Wait for a bit before reading again
   }
+
   // mqtt client function checkwifi connection  
   if (!client.connected()) {
         reconnect();

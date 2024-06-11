@@ -3,18 +3,15 @@
 #include <PubSubClient.h> // kindly import pubsubclient header file in tools
 #include <Wire.h> 
 #include <ArduinoJson.h> // Include ArduinoJson library
-
+#include "DHT.h"   // DHT library
 
 //constant value declaring
-
-//Ultrasonic sensro pins declaration
-#define TRIGGER_PIN 16
-#define ECHO_PIN 17
-
+const int sensorPin = 23; // Analog pin connected to the voltage sensor
+float voltage;
 
 //wifi username password
-const char* ssid = "Quantanics";
-const char* password = "Qu@nt@nics18";
+const char* ssid = "Airel_9842878776";
+const char* password = "air88581";
 //mqtt username password and server credentials
 const char* mqttServer = "broker.emqx.io"; 
 const int mqttPort = 1883; 
@@ -38,16 +35,15 @@ void setup() {
   // wifi username and password initializing  
   WiFi.begin(ssid, password);
 
-  // Read Input / Output pins  
-  pinMode(TRIGGER_PIN, OUTPUT);
-  pinMode(ECHO_PIN, INPUT);
 
   // wifi connection status checking 
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
+//    Serial.println("Connecting to WiFi...");
   }
 
   // when wifi is connected set server credentials in mqtt  
+//  Serial.println("Connected to WiFi");
   client.setServer(mqttServer, mqttPort);
 
  
@@ -70,13 +66,13 @@ void reconnect() {
 }
 
 
-void publishData(float distance){
+void publishData(float current_sensor_val){
   // Create a JSON object
   StaticJsonDocument<100> doc;
 
   
   // Add data to the JSON object
-  doc["distance"] = distance;
+  doc["current_sensor_value"] = current_sensor_val;
   
 
   
@@ -88,7 +84,7 @@ void publishData(float distance){
   // Publish the JSON string to the "data" topic
 //  Serial.println("publishing data");
 //  Serial.println(jsonString.c_str());
-  client.publish("/quantanics/industry/ultrasonic1", jsonString.c_str());
+  client.publish("/quantanics/industry/current_sensor1", jsonString.c_str());
 }
 
 
@@ -98,26 +94,13 @@ void loop() {
     previousMillis = currentMillis;
     long duration, distance;
     
-    digitalWrite(TRIGGER_PIN, LOW); 
-    delayMicroseconds(2); 
-    digitalWrite(TRIGGER_PIN, HIGH);
-    delayMicroseconds(10); 
-    digitalWrite(TRIGGER_PIN, LOW);
-    
-    duration = pulseIn(ECHO_PIN, HIGH);
-  
-    distance = duration * 0.034 / 2;
-    Serial.println(distance);
-    if (distance >= 0 && distance <= 400) {
+    int sensorValue = analogRead(sensorPin); // Read analog value from voltage sensor
+    current_sensor = sensorValue * (5.0 / 4095.0); // Convert analog value to voltage (assuming a 5V reference voltage and 12-bit ADC resolution)
       
-       // Read humidity and temperature
-     Serial.println(distance);
-      publishData(distance);
+    Serial.print("Voltage: ");
+    Serial.print(current_sensor);
+    publishData(current_sensor);
           
-      
-    } else {
-      Serial.println("Out of range");
-    }
   }
   // mqtt client function checkwifi connection  
   if (!client.connected()) {
