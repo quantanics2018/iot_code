@@ -1,5 +1,7 @@
 #include <WiFi.h>
 #include <WebServer.h>
+#include <PubSubClient.h>
+#include <ArduinoJson.h> 
 
 // Replace with your network credentials
 const char* ssid = "Airel_9842878776";
@@ -10,6 +12,17 @@ WebServer server(80);
 
 const int relayPin = 23; // Pin connected to IN pin of relay
 bool relayState = LOW;   // Variable to store the relay state
+
+//mqtt username password and server credentials
+const char* mqttServer = "broker.emqx.io"; 
+const int mqttPort = 1883; 
+const char* mqttUser = ""; 
+const char* mqttPassword = ""; 
+const char* clientId = "db032482-2f63-4ba8-9762-da6521020775"; // MQTT client ID
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+
 
 void setup() {
   Serial.begin(115200);
@@ -33,6 +46,8 @@ void setup() {
   // Start the server
   server.begin();
   Serial.println("Server started");
+
+   client.setServer(mqttServer, mqttPort);
 }
 
 void loop() {
@@ -81,10 +96,50 @@ void handleRoot() {
   server.send(200, "text/html", html);
 }
 
+//its reconnect function
+void reconnect() {
+    while (!client.connected()) {
+
+        if (client.connect(clientId, mqttUser, mqttPassword)) {
+            Serial.println("Connected to MQTT broker");
+        }
+        else {
+
+            Serial.println(" Retrying in 5 seconds...");
+            delay(5000);
+        }
+    }
+}
+
+void publishdata(String state,boolean relaystate){
+  StaticJsonDocument<100> doc;
+
+  Serial.println("publisher data is");
+  Serial.println(relaystate);
+  // Add data to the JSON object
+  doc["relay_state"] = relaystate;
+  doc["door_state"] = state;
+
+   // Serialize the JSON object to a string
+  String jsonString;
+  serializeJson(doc, jsonString);
+
+  
+  
+  client.publish("quantanics/industry/project2", jsonString.c_str());
+}
+
 void handleToggle() {
   relayState = !relayState; // Toggle the relay state
   digitalWrite(relayPin, relayState);
   Serial.println(relayState);
   String state = relayState ? "Close" : "Open";
+  publishdata(state,relayState);
+  // mqtt client function checkwifi connection  
+  if (!client.connected()) {
+        reconnect();
+  }
+  client.loop();
   server.send(200, "text/plain", "Door " + state);
+  
 }
