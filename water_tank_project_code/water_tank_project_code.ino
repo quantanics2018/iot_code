@@ -6,13 +6,13 @@
 
 
 // WiFi and MQTT credentials
-const char* ssid = "vivo V21 5G";
-const char* password = "$#245hct";
+const char* ssid = "Quantanics1234";
+const char* password = "Qu@nt@nics18";
 const char* mqtt_server = "broker.emqx.io";
 const int mqtt_port = 1883;
 const char* mqttTopic = "waterlevel";
-const char* mqtt_username = "waterlevel"; // Add your MQTT username
-const char* mqtt_password = "water"; // Add your MQTT password
+const char* mqtt_username = ""; // Add your MQTT username
+const char* mqtt_password = ""; // Add your MQTT password
 const char* mqtt_client_id = "5b42fd6a-cc80-452c-9c35-c37110c0d5d1"; // Add your MQTT client ID
 
 // Pin definitions
