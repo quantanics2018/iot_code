@@ -9,16 +9,17 @@ class Mqtt:
         self.db = mysql.connector.connect(
             host="localhost",
             user="root",
-            password="quantanics123",
-            database="iot_db"
+            password="",
+            database="iotkit"
         )
         client_id = f'python-mqtt-{random.randint(0, 1000)}'
-        self.mqttclient = mqttClient.Client(client_id)
+        # self.mqttclient = mqttClient.Client(client_id)
+        self.mqttclient = mqttClient.Client(mqttClient.CallbackAPIVersion.VERSION1, client_id)
         self.mqttclient.on_connect = self.on_connect
         self.mqttclient.on_message = self.on_message
-        self.mqttclient.username_pw_set(username="quantanics", password="quantanics123")
-        mqttstatus = self.mqttclient.connect("quantanics.in", 1883, 60)
-        self.mqttclient.subscribe("quantanics/industry/dht11", 0)  # Change the topic here
+        self.mqttclient.username_pw_set(username="", password="")
+        mqttstatus = self.mqttclient.connect("broker.emqx.io", 1883, 60)
+        self.mqttclient.subscribe("quantanics/industry/agri", 0)  # Change the topic here
         self.executor = ThreadPoolExecutor(max_workers=10)  # Adjust the number of workers as needed
         self.mqttclient.loop_forever()
 
@@ -34,14 +35,16 @@ class Mqtt:
             # distance1 = sensor_data.get("distance1", 0)
             # distance2 = sensor_data.get("distance2", 0)
             # ldr_val = sensor_data.get("ldrValue", 0)
-            humidity = sensor_data['humidity']
+            """ humidity = sensor_data['humidity']
             temperature = sensor_data['temperature']
 
             mycursor = self.db.cursor()
-            sql = "INSERT INTO `dht11_tb`(`temperature`, `humidity`) VALUES (%s,%s)"
+            sql = "INSERT INTO dht11_tb(temperature, humidity) VALUES (%s,%s)"
             value_sensor = (temperature,humidity)
             mycursor.execute(sql, value_sensor)
-            self.db.commit()
+            self.db.commit()  """
+
+            print(sensor_data)
 
             print("Data Inserted!")
         except Exception as e:
