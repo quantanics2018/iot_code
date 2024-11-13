@@ -11,7 +11,11 @@ const char* password = "Quantanics2018";
 // MQTT Broker
 const char* mqtt_server = "broker.emqx.io";
 const int mqtt_port = 1883;
-const char* mqtt_topic = "quantanics/industry/ultrasonic";
+const char* mqtt_topic = "quantanics/industry/locker_system";
+const char* client_id = "2c0134e9-f475-45e0-a175-a9e93bca2366"; 
+const char* mqtt_user = "";   // Add your MQTT username 
+const char* mqtt_password = ""; // Add your MQTT password 
+ 
 
 
 // Ultrasonic sensor 2
@@ -48,7 +52,24 @@ void setup() {
   setup_wifi();
   
   // Set the MQTT server and callback function
-  client.setServer(mqtt_server, mqtt_port);
+  client.setServer(mqtt_server, mqtt_port); 
+}
+
+
+void publishData(int distance,int ldr_value,int smoke_value){
+  StaticJsonDocument<300> doc; 
+  doc["distance"] = distance; 
+  doc["ldr_value"] = ldr_value; 
+  doc["smoke_value"] = smoke_value;
+
+  char jsonBuffer[512]; 
+  serializeJson(doc, jsonBuffer); 
+  if (client.publish(mqtt_topic, jsonBuffer)) { 
+    Serial.println("Data published successfully"); 
+  } else { 
+    Serial.println("Failed to publish data"); 
+  } 
+  
 }
 
 void loop() {
@@ -92,7 +113,7 @@ void loop() {
   Serial.print("Smoke Value:");
   Serial.println(smokeValue);
  
-  
+  publishData(distance2,  ldrValue, smokeValue); 
   delay(1000); // Adjust delay as needed
 }
 
@@ -106,13 +127,13 @@ void setup_wifi() {
 
 
 }
-
 void reconnect() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     if (client.connect("ESP32Client")) {
       Serial.println("connected");
-      client.publish(mqtt_topic, "ESP32 connected");
+      // Remove or comment out the line below to prevent publishing "ESP32 connected"
+      // client.publish(mqtt_topic, "ESP32 connected");
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
