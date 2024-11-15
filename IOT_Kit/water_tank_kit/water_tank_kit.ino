@@ -25,7 +25,8 @@ const char* mqttServer = "broker.emqx.io";
 const int mqttPort = 1883; 
 const char* mqttUser = ""; 
 const char* mqttPassword = ""; 
-const char* clientId = "db032482-2f62-4ba8-9782-da6521020775"; // MQTT client ID
+const char* clientId = "db032482-2f62-4ba8-9782-da6521020772"; // MQTT client ID
+const char* mqtt_topic="quantanics/industry/water_tank";
 
 //loop intervelling time initialized value  `
 unsigned long previousMillis = 0;
@@ -40,18 +41,20 @@ PubSubClient client(espClient);
 void setup() {
   Serial.begin(9600);
 
-  // wifi username and password initializing  
-  WiFi.begin(ssid, password);
-
   // Read Input / Output pins  
   pinMode(TRIGGER_PIN, OUTPUT);
   pinMode(ECHO_PIN, INPUT);
 
-  // wifi connection status checking 
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
-  }
+  WiFi.begin(ssid, password); 
+  while (WiFi.status() != WL_CONNECTED) { 
+    delay(500); 
+    Serial.print("Connecting to Wi-Fi..."); 
+  } 
+  Serial.println("\nWiFi connected"); 
+  Serial.println("IP address: "); 
+  Serial.println(WiFi.localIP());
 
+  
 
   if (!bmp.begin()) {
     Serial.print("Could not find a valid BMP085 sensor, check wiring!");
@@ -64,22 +67,19 @@ void setup() {
  
 }
 
-//its reconnect function
-void reconnect() {
-    while (!client.connected()) {
-//        Serial.println("Attempting MQTT connection...");
-        if (client.connect(clientId, mqttUser, mqttPassword)) {
-            Serial.println("Connected to MQTT broker");
-        }
-        else {
-//            Serial.print("Failed, rc=");
-//            Serial.print(client.state());
-            Serial.println(" Retrying in 5 seconds...");
-            delay(5000);
-        }
-    }
+void reconnect() { 
+  while (!client.connected()) { 
+    Serial.print("Attempting MQTT connection..."); 
+    if (client.connect(clientId, mqttUser, mqttPassword)) { 
+      Serial.println("Connected to MQTT server"); 
+    } else { 
+      Serial.print("Failed to connect, rc="); 
+      Serial.print(client.state()); 
+      Serial.println(" trying again in 5 seconds"); 
+      delay(5000); 
+    } 
+  } 
 }
-
 
 void publishData(float water_percentage,String water_status,float pressure,float temperature){
   // Create a JSON object
@@ -93,10 +93,15 @@ void publishData(float water_percentage,String water_status,float pressure,float
   doc["temperature"] = temperature;
   
  
-  // Serialize the JSON object to a string
-  String jsonString;
-  serializeJson(doc, jsonString);
-  client.publish("industry/ultrasonic1", jsonString.c_str());
+ char jsonBuffer[512]; 
+  serializeJson(doc, jsonBuffer); 
+
+  if (client.publish(mqtt_topic, jsonBuffer)) { 
+    Serial.println("Data published successfully"); 
+  } else { 
+    Serial.print("Failed to publish data. MQTT state: ");
+    Serial.println(client.state()); // Print MQTT state for debugging
+  } 
 }
 
 

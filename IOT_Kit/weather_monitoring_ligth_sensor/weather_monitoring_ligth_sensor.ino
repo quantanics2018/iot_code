@@ -20,12 +20,15 @@ const int digitalPin = 23; // Digital output pin connected to GPIO 23
 //wifi username password
 const char* ssid = "Quantanics";
 const char* password = "Quantanics2018";
+
+
 //mqtt username password and server credentials
 const char* mqttServer = "broker.emqx.io"; 
 const int mqttPort = 1883; 
 const char* mqttUser = ""; 
 const char* mqttPassword = ""; 
 const char* clientId = "db032482-2f62-4ba8-9782-da6521020775"; // MQTT client ID
+const char* mqtt_topic = "quantanics/industry/weather_monitoring";
 
 
 //loop intervelling time initialized value
@@ -49,19 +52,25 @@ void setup() {
    Wire.begin(21, 22); // SDA, SCL
 
     Wire.begin(19, 18); // SDA on GPIO19, SCL on GPIO18
-   // wifi username and password initializing  
-  WiFi.begin(ssid, password);
 
 
    pinMode(digitalPin, INPUT);
 
-    // wifi connection status checking 
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
-  }
-
+   // Connect to Wi-Fi
+    WiFi.begin(ssid, password); 
+    while (WiFi.status() != WL_CONNECTED) { 
+      delay(500); 
+      Serial.print("Connecting to Wi-Fi..."); 
+    } 
+    Serial.println("\nWiFi connected"); 
+    Serial.println("IP address: "); 
+    Serial.println(WiFi.localIP());
+  
+    
   // Check sensor BH1750  
-  lightMeter.begin(); 
+  lightMeter.begin();
+  // Set MQTT server and port
+  client.setServer(mqttServer, mqttPort); 
 
 }
 
@@ -69,40 +78,42 @@ void setup() {
 
 
 
-void publishData(float irradiation){
+void publishData(int rain_drop_value,int irradiance){
   // Create a JSON object
   StaticJsonDocument<100> doc;
 
   
   // Add data to the JSON object
-//  doc["temperature"] = temperature;
-//  doc["humidity"] = humidity;
-//  doc["rainfall"] = rainfall;
-  doc["irradiation"] = irradiation;
+  doc["irradiation"] = irradiance;
+  doc["rain_drop_val"] = rain_drop_value;
 
   
   // Serialize the JSON object to a string
-  String jsonString;
-  serializeJson(doc, jsonString);
-  Serial.println(jsonString);
-// client.publish("quantanics/industry/testing1", jsonString.c_str());
+  char jsonBuffer[512];
+  serializeJson(doc, jsonBuffer);
+  if (client.publish(mqtt_topic, jsonBuffer)) { 
+    Serial.println("Data published successfully"); 
+  } else { 
+    Serial.print("Failed to publish data. MQTT state: ");
+    Serial.println(client.state()); // Print MQTT state for debugging
+  } 
 }
 
 
-//its reconnect function
-void reconnect() {
-    while (!client.connected()) {
-
-        if (client.connect(clientId, mqttUser, mqttPassword)) {
-            Serial.println("Connected to MQTT broker");
-        }
-        else {
-
-            Serial.println(" Retrying in 5 seconds...");
-            delay(5000);
-        }
-    }
+void reconnect() { 
+  while (!client.connected()) { 
+    Serial.print("Attempting MQTT connection..."); 
+    if (client.connect(clientId, mqttUser, mqttPassword)) { 
+      Serial.println("Connected to MQTT server"); 
+    } else { 
+      Serial.print("Failed to connect, rc="); 
+      Serial.print(client.state()); 
+      Serial.println(" trying again in 5 seconds"); 
+      delay(5000); 
+    } 
+  } 
 }
+
 
 
 void loop() {
@@ -111,7 +122,10 @@ void loop() {
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
 
-      
+    if (!client.connected()) {
+      reconnect();
+    }
+    client.loop();
     // Wait a few seconds between measurements
     float lux = lightMeter.readLightLevel();
         // Convert lux to irradiance (W/m²) using the conversion factor for sunlight
@@ -124,7 +138,7 @@ void loop() {
     Serial.print("Solar irradiance");
     Serial.println(irradiance);
   
-    publishData(lux);
+    publishData(digitalValue,irradiance);
   }
 
 }
