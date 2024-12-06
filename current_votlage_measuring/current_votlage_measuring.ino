@@ -1,17 +1,23 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
-#include <DHT.h>
+
 #include <ArduinoJson.h> 
 #include <Wire.h>
+
+
+//adjust accordingly
+const char* mqtt_topic = "quantanics/industry/sensor_datatesttt4";
+const float currentSensorSensitivity = 38.938 ; // mV/A (adjust for your sensor)
  
 // Replace with your network credentials 
-const char* ssid = "Quantanics"; 
+
+const char* ssid = "Airel_9842878776"; 
 const char* password = "air88581"; 
  
 // MQTT server settings 
 const char* mqtt_server = "broker.emqx.io"; 
 const int mqtt_port = 1883; 
-const char* mqtt_topic = "quantanics/industry/sensor_data"; 
+ 
 const char* client_id = "2c0134e9-f475-45e0-a175-a9e93bca2365"; 
 const char* mqtt_user = "";   // Add your MQTT username 
 const char* mqtt_password = ""; // Add your MQTT password 
@@ -27,7 +33,7 @@ const int currentSensorPin = 34;
 const float adcResolution = 4096.0; // 12-bit ADC resolution
 const float referenceVoltage = 3.3; // Reference voltage of ESP32 ADC (in volts)
 const float voltageStepDownFactor = 16.5 / 4095; // Voltage sensor factor
-const float currentSensorSensitivity = 93.62; // mV/A (adjust for your sensor)
+
 
 // Sensor Offset (calibration)variable
 float currentSensorOffset = 0;
@@ -39,7 +45,7 @@ PubSubClient client(espClient);
 
 
 float calibrateCurrentSensor() {
-  const int samples = 100;
+  const int samples = 500;
   long totalAdc = 0;
   for (int i = 0; i < samples; i++) {
     totalAdc += analogRead(currentSensorPin);
@@ -56,7 +62,7 @@ float readVoltage() {
 
 
 float readCurrent() {
-  const int samples = 50;
+  const int samples = 200;
   long totalAdc = 0;
   for (int i = 0; i < samples; i++) {
     totalAdc += analogRead(currentSensorPin);
@@ -140,6 +146,8 @@ void loop() {
     reconnect(); 
   } 
   client.loop(); 
+
+
   
   float voltage = 0.0;
   float t;
@@ -151,10 +159,13 @@ void loop() {
   voltage = (voltage/50.0);
   if(voltage <= 0.5) voltage = 0.0;
   float current = readCurrent();
-  if(current <= 0.2)  current = 0.0;
+  if(current <= 0.05)  current = 0.0;
 
   // Publish data
   publishData(voltage, current);
+  Serial.print(voltage);
+  Serial.print("   ");
+  Serial.println(current);
 
   delay(750);
 }
